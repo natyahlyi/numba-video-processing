@@ -12,7 +12,7 @@ MOVIE_TITLE = "10sec4k"
 
 # Numba Parallel 
 @njit(parallel=True)
-def filter2d_core_parallel(image, filt, result):
+def filter3d_core_parallel(image, filt, result):
     M, N, D = image.shape
     Mf, Nf = filt.shape
     Mf2 = Mf // 2
@@ -32,15 +32,15 @@ def filter2d_core_parallel(image, filt, result):
 
 
 @njit
-def filter2d_parallel(image, filt):
+def filter3d_parallel(image, filt):
     result = np.zeros_like(image)
-    filter2d_core_parallel(image, filt, result)
+    filter3d_core_parallel(image, filt, result)
     return result
 
 
 # Numba JIT only 
 @njit
-def filter2d_core_jit(image, filt, result):
+def filter3d_core_jit(image, filt, result):
     M, N, D = image.shape
     Mf, Nf = filt.shape
     Mf2 = Mf // 2
@@ -61,14 +61,14 @@ def filter2d_core_jit(image, filt, result):
 
 
 @njit
-def filter2d_jit(image, filt):
+def filter3d_jit(image, filt):
     result = np.zeros_like(image)
-    filter2d_core_jit(image, filt, result)
+    filter3d_core_jit(image, filt, result)
     return result
 
 
 # Pure Python
-def filter2d_core(image, filt, result):
+def filter3d_core(image, filt, result):
     M, N, D = image.shape
     Mf, Nf = filt.shape
     Mf2 = Mf // 2
@@ -86,15 +86,15 @@ def filter2d_core(image, filt, result):
 
                 result[i, j, d] = num / cnt
 
-def filter2d(image, filt):
+def filter3d(image, filt):
     result = np.zeros_like(image)
-    filter2d_core(image, filt, result)
+    filter3d_core(image, filt, result)
     return result
 
 # Numba GPU
 
 @cuda.jit
-def filter2d_core_cuda(image, filt, result):
+def filter3d_core_cuda(image, filt, result):
     M, N, D = image.shape
     Mf, Nf = filt.shape
     Mf2 = Mf // 2
@@ -112,13 +112,13 @@ def filter2d_core_cuda(image, filt, result):
 
 
 
-def filter2d_cuda(image, filt):
+def filter3d_cuda(image, filt):
     result = np.zeros_like(image)
     threadsperblock = (3, 3, image.shape[2])
     blockspergrid_x = math.ceil(image.shape[0] / threadsperblock[0])
     blockspergrid_y = math.ceil(image.shape[1] / threadsperblock[1])
     blockspergrid = (blockspergrid_x, blockspergrid_y, image.shape[2])
-    filter2d_core_cuda[blockspergrid, threadsperblock](image, filt, result)
+    filter3d_core_cuda[blockspergrid, threadsperblock](image, filt, result)
     return result
 
 
@@ -153,25 +153,25 @@ if __name__ == '__main__':
         # (process)
         if benchmark and iteration == 0:
             ss = timer()
-            result = filter2d(image, ff)
+            result = filter3d(image, ff)
             python_t = timer() - ss
 
         # (numba)
         if benchmark and iteration < 5:
             ss = timer()
-            result = filter2d_jit(image, ff)
+            result = filter3d_jit(image, ff)
             jit_t = min(jit_t, timer() - ss)
             
 
         # (numba_parallel)
         if benchmark and iteration < 5:
             ss = timer()
-            result = filter2d_parallel(image, ff)
+            result = filter3d_parallel(image, ff)
             parallel_t = min(parallel_t, timer() - ss)
             
         # (numba_cuda)
         ss = timer()
-        result = filter2d_cuda(image, ff)
+        result = filter3d_cuda(image, ff)
         cuda_t = min(cuda_t, timer() - ss)
         
         print(cuda_t)
